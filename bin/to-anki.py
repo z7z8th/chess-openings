@@ -4,6 +4,7 @@ import os
 import re
 import urllib.parse  # Built-in tool to clean up strings for web URLs
 from multiprocessing import Pool, cpu_count
+import argparse
 
 # Third-party libraries used specifically for the graphics compilation
 import chess
@@ -74,7 +75,34 @@ def generate_single_board_animation(args):
     return "error"
 
 
-def convert_tsv_to_anki(input_file_path, output_file_path):
+def generate_chess_url(eco: str, name: str, pgn_moves: str) -> str:
+    """
+    Generates a chess://pgn/ URL string from tournament data and moves.
+    """
+    # 1. Format the mandatory Seven Tag Roster + ECO field
+    # Missing mandatory values are safely populated with standard placeholders "?" or "*"
+    pgn_headers = (
+        f'[Event "{name}"]\n'
+        f'[Site "?"]\n'
+        f'[Date "????.??.??"]\n'
+        f'[Round "?"]\n'
+        f'[White "?"]\n'
+        f'[Black "?"]\n'
+        f'[Result "*"]\n'
+        f'[ECO "{eco}"]\n\n'
+    )
+    
+    # 2. Combine headers with the actual chess move string
+    full_pgn = f"{pgn_headers}{pgn_moves.strip()}"
+    
+    # 3. URL-encode the payload string safely (converts spaces, quotes, brackets)
+    encoded_payload = urllib.parse.quote(full_pgn)
+    
+    # 4. Return the complete custom protocol string
+    return f"chess://pgn/{encoded_payload}"
+
+
+def convert_tsv_to_anki(input_file_path, output_file_path, skip_board_anim):
     """
     Reads TSV using plain Python, collects tasks for the multi-process engine, 
     and exports formatted Anki card data.
@@ -116,18 +144,18 @@ def convert_tsv_to_anki(input_file_path, output_file_path):
         rows_data = []
 
         # Parse text rows one single line at a time
-        opening_idx = 0
+        oidx = 0
         for line in infile:
-            opening_idx += 1
+            oidx += 1
             if not line.strip():
-                print(f"empty line {opening_idx}")
+                print(f"empty line {oidx}")
                 continue
 
             columns = line.strip("\r\n").split("\t")
 
             # Guard condition to make sure row parsing index bounds are safe
             if len(columns) <= max(eco_idx, name_idx, pgn_idx, uci_idx, epd_idx):
-                print(f"line {opening_idx}: not enough columns")
+                print(f"line {oidx}: not enough columns")
                 continue
 
             eco = columns[eco_idx]
@@ -138,24 +166,26 @@ def convert_tsv_to_anki(input_file_path, output_file_path):
 
             # Generate uniform, operating-system-safe filenames
             safe_name = "".join(c for c in name if c.isalnum() or c in "._- ").strip().replace(" ", "_")
-            image_filename = f"{opening_idx:04d}_{eco}_{safe_name}.png"
+            image_filename = f"{oidx:04d}_{eco}_{safe_name}.png"
             target_image_path = images_dir / image_filename
 
             # Package data for the multiprocessing pool and rows for writing later
-            tasks.append((uci, str(target_image_path), eco, name))
-            rows_data.append((eco, name, pgn, uci, epd, image_filename))
+            if not skip_board_anim:
+                tasks.append((uci, str(target_image_path), eco, name))
+            rows_data.append((oidx, eco, name, pgn, uci, epd, image_filename))
 
     # --- MULTIPROCESSING ENGINE START ---
     num_cores = cpu_count()
     print(f"Launching processing engine utilizing {num_cores} CPU cores...")
     
-    with Pool(processes=num_cores) as pool:
-        # map runs tasks simultaneously across cores and preserves dataset order
-        results = pool.map(generate_single_board_animation, tasks)
+    if not skip_board_anim:
+        with Pool(processes=num_cores) as pool:
+            # map runs tasks simultaneously across cores and preserves dataset order
+            results = pool.map(generate_single_board_animation, tasks)
 
-    # Count our processing actions
-    generated_count = results.count("generated")
-    skipped_count = results.count("skipped")
+        # Count our processing actions
+        generated_count = results.count("generated")
+        skipped_count = results.count("skipped")
     
     # --- WRITE OUT THE ANKI TEXT FILE ---
     print("\nWriting out finalized Anki card collection records...")
@@ -166,7 +196,7 @@ def convert_tsv_to_anki(input_file_path, output_file_path):
         outfile.write("#tags column:3\n")
         outfile.write("#deck column:4\n")
 
-        for eco, name, pgn, uci, epd, image_filename in rows_data:
+        for oidx, eco, name, pgn, uci, epd, image_filename in rows_data:
             # Clean the opening name to match Lichess's specific directory URL format
             # --- START UNIFIED REGEX LICHESS SLUG ALGORITHM ---
             # This single regex acts like a switchboard:
@@ -188,16 +218,18 @@ def convert_tsv_to_anki(input_file_path, output_file_path):
             # --- END UNIFIED REGEX LICHESS SLUG ALGORITHM ---
             lichess_url = f"https://lichess.org/opening/{web_safe_name}"
 
-            front = f"{eco} - {name}"
+            chess_url = generate_chess_url(eco, name, pgn)
+
+            front = f"{oidx}. {eco} - {name}"
             
             # Formulate card back. The <name> element now wraps a link to Lichess.
             back = (
                 f"<eco>{eco}</eco>"
-                f'<name><a href="{lichess_url}" target="_blank" style="text-decoration: none; color: inherit;">{name}</a></name>'
-                f"<pgn>{pgn}</pgn>"
+                f'<name><a href="{lichess_url}" target="_blank">{name}</a></name>'
+                f'<div class="chess-board-container"><img src="{image_filename}" /></div>'
+                f'<a href="{chess_url}"><pgn>{pgn}</pgn></a>'
                 f"<uci>{uci}</uci>"
                 f"<epd>{epd}</epd>"
-                f'<div class="chess-board-container"><img src="{image_filename}" /></div>'
             )
             tag = eco
             deck_name = f"Chess Openings::{eco}"
@@ -206,8 +238,9 @@ def convert_tsv_to_anki(input_file_path, output_file_path):
             outfile.write(f"{front}\t{back}\t{tag}\t{deck_name}\n")
 
     print(f"\nSuccess! Processed {len(rows_data)} openings total.")
-    print(f"Created {generated_count} new animations. Skipped {skipped_count} items (already existed).")
-    print(f"All animated graphics saved to the folder: '{images_dir.resolve()}'")
+    if not skip_board_anim:
+        print(f"Created {generated_count} new animations. Skipped {skipped_count} items (already existed).")
+        print(f"All animated graphics saved to the folder: '{images_dir.resolve()}'")
     print(f"Saved Anki-ready import text file to: {output_path}")
 
 
@@ -215,8 +248,18 @@ if __name__ == "__main__":
     if len(sys.argv) < 3:
         print("Usage: python convert_to_anki.py <input_file.tsv> <output_file.txt>")
         sys.exit(1)
+    # 1. Initialize the parser
+    parser = argparse.ArgumentParser(description="Parse standard options.")
 
-    user_input_file = sys.argv[1]
-    user_output_file = sys.argv[2]
+    # 2. Add the boolean flag option
+    parser.add_argument(
+        "--skip-board-anim",
+        action="store_true",
+        help="Skip the board animation sequence.",
+    )
+    parser.add_argument('input_file', help="Path to the source tsv")
+    parser.add_argument('output_file', help="Path to save the resulting tab-separated txt output file")
+    
+    args = parser.parse_args()
 
-    convert_tsv_to_anki(user_input_file, user_output_file)
+    convert_tsv_to_anki(args.input_file, args.output_file, args.skip_board_anim)

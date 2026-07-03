@@ -18,3 +18,6 @@ clean:
 
 anki: all
 	$(PYTHON) bin/to-anki.py dist/all.tsv dist/chess-openings-anki.txt
+
+anki-txt: all
+	$(PYTHON) bin/to-anki.py --skip-board-anim dist/all.tsv dist/chess-openings-anki.txt

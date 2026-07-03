@@ -1,0 +1,6 @@
+[Desktop Entry]
+Name=Chess URL Handler
+Exec=python3 /home/bob/.local/share/applications/chess_url_handler.py %u
+Type=Application
+Terminal=false
+MimeType=x-scheme-handler/chess;
