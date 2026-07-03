@@ -116,14 +116,18 @@ def convert_tsv_to_anki(input_file_path, output_file_path):
         rows_data = []
 
         # Parse text rows one single line at a time
+        opening_idx = 0
         for line in infile:
+            opening_idx += 1
             if not line.strip():
+                print(f"empty line {opening_idx}")
                 continue
 
             columns = line.strip("\r\n").split("\t")
 
             # Guard condition to make sure row parsing index bounds are safe
             if len(columns) <= max(eco_idx, name_idx, pgn_idx, uci_idx, epd_idx):
+                print(f"line {opening_idx}: not enough columns")
                 continue
 
             eco = columns[eco_idx]
@@ -134,7 +138,7 @@ def convert_tsv_to_anki(input_file_path, output_file_path):
 
             # Generate uniform, operating-system-safe filenames
             safe_name = "".join(c for c in name if c.isalnum() or c in "._- ").strip().replace(" ", "_")
-            image_filename = f"{eco}_{safe_name}.png"
+            image_filename = f"{opening_idx:04d}_{eco}_{safe_name}.png"
             target_image_path = images_dir / image_filename
 
             # Package data for the multiprocessing pool and rows for writing later
