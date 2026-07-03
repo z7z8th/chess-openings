@@ -1,0 +1,51 @@
+/* --- Global Card Styling --- */
+.card {
+  font-family: Arial, Helvetica, sans-serif;
+  font-size: xx-large;          /* Default baseline for all general card text */
+  text-align: center;
+  color: black;
+  background-color: white;
+  padding: 20px;
+}
+
+/* --- ECO & Name (xx-large Style) --- */
+eco, name {
+  display: block;
+  font-size: x-large;         /* Overrides global size to make headers xx-large */
+  font-weight: bold;
+  margin-top: 0.67em;
+  margin-bottom: 0.67em;
+  color: #1a1a1a;
+}
+
+eco {
+  color: #2980b9;              /* Chess Blue */
+}
+
+/* --- Chess Move Data (x-large Monospace Font) --- */
+pgn, uci, epd {
+  display: block;
+  font-family: "Courier New", Courier, monospace;
+  font-size: x-large;          /* Forces these fields to remain x-large */
+  background-color: #eaeded;
+  padding: 12px 18px;
+  margin: 15px auto;
+  border-radius: 6px;
+  max-width: 90%;
+  text-align: left;
+  word-break: break-all;
+}
+
+/* Hide the hidden tags when they spill over into other fields */
+eco name, name eco, name pgn, name uci, name epd {
+  display: none;
+}
+
+/* --- Labels Before Data --- */
+pgn::before { content: "PGN: "; font-weight: bold; color: #7f8c8d; }
+uci::before { content: "UCI: "; font-weight: bold; color: #7f8c8d; }
+epd::before { content: "EPD: "; font-weight: bold; color: #7f8c8d; }
+
+/* --- Dark Mode --- */
+.nightMode eco, .nightMode name { color: #ecf0f1; }
+.nightMode pgn, .nightMode uci, .nightMode epd { background-color: #2c3e50; color: #ecf0f1; }

@@ -12,6 +12,9 @@ dist/%.tsv: %.tsv bin/gen.py
 	mkdir -p dist
 	$(PYTHON) bin/gen.py $< > $@
 
-.PHONY: clean
+.PHONY: clean anki
 clean:
 	rm -f dist/all.tsv $(sources:%=dist/%)
+
+anki: all
+	$(PYTHON) bin/to-anki.py dist/all.tsv dist/chess-openings-anki.txt
