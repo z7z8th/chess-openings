@@ -202,10 +202,12 @@ def convert_tsv_to_anki(input_file_path, output_file_path, skip_board_anim):
             # This single regex acts like a switchboard:
             # - If it catches a colon (Group 1), it replaces it with '_-_'
             # - If it catches any other non-alphanumeric/non-dash symbol (Group 2), it replaces it with '_'
+            slug = name
+            slug = re.sub(r'\'', '', slug)
             slug = re.sub(
                 r'([^a-zA-Z0-9\-]+)', 
                 '_', 
-                name
+                slug
             )
             
             # Clean up double underscores or trailing boundary dashes
