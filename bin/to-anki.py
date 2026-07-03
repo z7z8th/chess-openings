@@ -1,6 +1,8 @@
 import sys
 from pathlib import Path
 import os
+import re
+import urllib.parse  # Built-in tool to clean up strings for web URLs
 from multiprocessing import Pool, cpu_count
 
 # Third-party libraries used specifically for the graphics compilation
@@ -8,6 +10,9 @@ import chess
 import chess.svg
 import cairosvg
 from apng import APNG
+
+# --- GLOBAL CONFIGURATION VARIABLES ---
+BOARD_SIZE = 400  # Change this number to resize your chess boards (e.g., 400, 500, 600)
 
 
 def generate_single_board_animation(args):
@@ -18,10 +23,8 @@ def generate_single_board_animation(args):
     uci_sequence, output_path_str, eco, name = args
     output_image_path = Path(output_path_str)
 
-    size = 300
-
     # --- TARGET SKIPPING CHECK ---
-    # Check if file exists inside the child process to save overhead
+    # Check if the file already exists inside the folder to save processor time
     if output_image_path.is_file():
         return "skipped"
 
@@ -30,9 +33,9 @@ def generate_single_board_animation(args):
     board = chess.Board()
     frame_files = []
     
-    # 1. Render the initial blank starting board layout (Move 0)
     try:
-        start_svg = chess.svg.board(board=board, size=size)
+        # 1. Render the initial blank starting board layout (Move 0) using the BOARD_SIZE variable
+        start_svg = chess.svg.board(board=board, size=BOARD_SIZE)
         temp_start_frame = f"{output_image_path.stem}_frame_0.png"
         cairosvg.svg2png(bytestring=start_svg, write_to=temp_start_frame)
         frame_files.append(temp_start_frame)
@@ -45,7 +48,7 @@ def generate_single_board_animation(args):
                 board.push(move)
                 
                 # Render state, highlighting the last played piece move
-                board_svg = chess.svg.board(board=board, lastmove=move, size=size)
+                board_svg = chess.svg.board(board=board, lastmove=move, size=BOARD_SIZE)
                 temp_frame_path = f"{output_image_path.stem}_frame_{index}.png"
                 
                 cairosvg.svg2png(bytestring=board_svg, write_to=temp_frame_path)
@@ -59,6 +62,7 @@ def generate_single_board_animation(args):
 
     # 3. Compile all individual frames into a single, seamless APNG file
     if frame_files:
+        # delay=1000 sets each animation move step to pause for 1 second (1000ms)
         APNG.from_files(frame_files, delay=1000).save(str(output_image_path))
         
         # Clean up the individual temporary frame files from disk
@@ -72,11 +76,13 @@ def generate_single_board_animation(args):
 
 def convert_tsv_to_anki(input_file_path, output_file_path):
     """
-    Reads TSV, collects tasks for the multi-process engine, and exports Anki card data.
+    Reads TSV using plain Python, collects tasks for the multi-process engine, 
+    and exports formatted Anki card data.
     """
     input_path = Path(input_file_path)
     output_path = Path(output_file_path)
 
+    # Verify that the input file actually exists before starting
     if not input_path.is_file():
         print(f"Error: The input file '{input_file_path}' does not exist.")
         sys.exit(1)
@@ -85,15 +91,17 @@ def convert_tsv_to_anki(input_file_path, output_file_path):
     images_dir = Path("chess-openings-apng")
     images_dir.mkdir(exist_ok=True)
 
-    # We read the entire file into memory first to organize tasks for multiprocessing
+    # Read the entire file into memory first to organize tasks for multiprocessing
     with open(input_path, mode="r", encoding="utf-8") as infile:
         header_line = infile.readline()
         if not header_line:
             print("Error: The file is empty.")
             return
 
+        # Clean line breaks and separate by tab markers
         headers = header_line.strip("\r\n").split("\t")
 
+        # Map field name text tokens dynamically to index coordinates
         try:
             eco_idx = headers.index("eco")
             name_idx = headers.index("name")
@@ -107,13 +115,14 @@ def convert_tsv_to_anki(input_file_path, output_file_path):
         tasks = []
         rows_data = []
 
-        # Read lines and map columns to clear layout parameters
+        # Parse text rows one single line at a time
         for line in infile:
             if not line.strip():
                 continue
 
             columns = line.strip("\r\n").split("\t")
 
+            # Guard condition to make sure row parsing index bounds are safe
             if len(columns) <= max(eco_idx, name_idx, pgn_idx, uci_idx, epd_idx):
                 continue
 
@@ -137,7 +146,7 @@ def convert_tsv_to_anki(input_file_path, output_file_path):
     print(f"Launching processing engine utilizing {num_cores} CPU cores...")
     
     with Pool(processes=num_cores) as pool:
-        # map runs tasks simultaneously across cores and preserves ordering
+        # map runs tasks simultaneously across cores and preserves dataset order
         results = pool.map(generate_single_board_animation, tasks)
 
     # Count our processing actions
@@ -147,16 +156,40 @@ def convert_tsv_to_anki(input_file_path, output_file_path):
     # --- WRITE OUT THE ANKI TEXT FILE ---
     print("\nWriting out finalized Anki card collection records...")
     with open(output_path, mode="w", encoding="utf-8") as outfile:
+        # Configuration lines to lock in your custom note type, columns, and decks
         outfile.write("#notetype:Chess Opening\n")
         outfile.write("#html:true\n")
         outfile.write("#tags column:3\n")
         outfile.write("#deck column:4\n")
 
         for eco, name, pgn, uci, epd, image_filename in rows_data:
+            # Clean the opening name to match Lichess's specific directory URL format
+            # --- START UNIFIED REGEX LICHESS SLUG ALGORITHM ---
+            # This single regex acts like a switchboard:
+            # - If it catches a colon (Group 1), it replaces it with '_-_'
+            # - If it catches any other non-alphanumeric/non-dash symbol (Group 2), it replaces it with '_'
+            slug = re.sub(
+                r'([^a-zA-Z0-9\-]+)', 
+                '_', 
+                name
+            )
+            
+            # Clean up double underscores or trailing boundary dashes
+            slug = re.sub(r'_{2,}', '_', slug)
+            slug = re.sub(r'_*-_*', '-', slug)
+            slug = slug.strip('-').strip('_')
+            
+            # Encode for safe web transmission
+            web_safe_name = urllib.parse.quote(slug)
+            # --- END UNIFIED REGEX LICHESS SLUG ALGORITHM ---
+            lichess_url = f"https://lichess.org/opening/{web_safe_name}"
+
             front = eco
+            
+            # Formulate card back. The <name> element now wraps a link to Lichess.
             back = (
                 f"<eco>{eco}</eco>"
-                f"<name>{name}</name>"
+                f'<name><a href="{lichess_url}" target="_blank" style="text-decoration: none; color: inherit;">{name}</a></name>'
                 f"<pgn>{pgn}</pgn>"
                 f"<uci>{uci}</uci>"
                 f"<epd>{epd}</epd>"
@@ -165,6 +198,7 @@ def convert_tsv_to_anki(input_file_path, output_file_path):
             tag = eco
             deck_name = f"Chess Openings::{eco}"
 
+            # Save line using tab separator
             outfile.write(f"{front}\t{back}\t{tag}\t{deck_name}\n")
 
     print(f"\nSuccess! Processed {len(rows_data)} openings total.")
