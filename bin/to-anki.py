@@ -184,7 +184,7 @@ def convert_tsv_to_anki(input_file_path, output_file_path):
             # --- END UNIFIED REGEX LICHESS SLUG ALGORITHM ---
             lichess_url = f"https://lichess.org/opening/{web_safe_name}"
 
-            front = eco
+            front = f"{eco} - {name}"
             
             # Formulate card back. The <name> element now wraps a link to Lichess.
             back = (
