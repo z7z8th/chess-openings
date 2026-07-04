@@ -2,6 +2,10 @@
 <div class="card">{{Front}}</div>
 */
 
+/*
+{{Back}}
+*/
+
 /* --- Global Card Styling --- */
 .card {
   font-family: Arial, Helvetica, sans-serif;
@@ -14,7 +18,7 @@
 
 /* --- ECO & Name (xx-large Style) --- */
 eco, name {
-  display: block;
+  display: inline;
   font-size: x-large;         /* Overrides global size to make headers xx-large */
   font-weight: bold;
   margin-top: 0.67em;
@@ -23,7 +27,13 @@ eco, name {
 }
 
 eco {
-  color: #2980b9;              /* Chess Blue */
+  padding: 12px 18px;
+  margin: 15px auto;
+  border-radius: 6px;
+}
+
+img {
+  padding-top: 1rem;
 }
 
 /* --- Chess Move Data (x-large Monospace Font) --- */
