@@ -5,15 +5,15 @@
 
 * anki with board animation
 
-```sh
-make anki
-```
+  ```sh
+  make anki
+  ```
 
 * anki without board, txt only
 
-```sh
-make anki-txt
-```
+  ```sh
+  make anki-txt
+  ```
 
 * modify css to anki/chess-opening.css
 
@@ -44,17 +44,21 @@ make anki-txt
   @import url("chessboard-1.0.0.css");
   @import url("chess-opening.css");
   ```
+* Add field `pgn` to `Chess Opening`
 
 * import to anki
 
+* Debug Anki UI
+
+  ```sh
+  QTWEBENGINE_REMOTE_DEBUGGING=9222 anki
+  ```
+  * Then open `chrome://inspect/#devices` in Chrome/Chromium
 
 ## chess url handler
 
 ```sh
-
 cp -v bin/chess_url_handler.py bin/chess-url-handler.desktop ~/.local/share/applications/
-
 xdg-mime default chess-url-handler.desktop x-scheme-handler/chess
-
 ```
 
