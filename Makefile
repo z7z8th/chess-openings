@@ -17,7 +17,7 @@ clean:
 	rm -f dist/all.tsv $(sources:%=dist/%)
 
 anki: all
-	$(PYTHON) bin/to-anki.py dist/all.tsv dist/chess-openings-anki.txt
+	$(PYTHON) bin/to-anki.py dist/all.tsv dist/chess-openings-anim-anki.txt
 
 anki-txt: all
 	$(PYTHON) bin/to-anki.py --skip-board-anim dist/all.tsv dist/chess-openings-anki.txt

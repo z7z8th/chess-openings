@@ -4,16 +4,28 @@
 
 /*
 {{Back}}
+
+<!-- Dependencies -->
+<script src="jquery-3.5.1.js"></script>
+<script src="chess-1.4.0.js"></script>
+<script src="chessboard-1.0.0.js"></script>
+
+<script src="chess-opening.js"></script>
 */
 
-/* --- Global Card Styling --- */
+/*
+@import url("chessboard-1.0.0.css");
+@import url("chess-opening.css");
+*/
+
+
 .card {
   font-family: Arial, Helvetica, sans-serif;
   font-size: xx-large;          /* Default baseline for all general card text */
   text-align: center;
   /*color: black;
   background-color: white;*/
-  padding: 20px;
+  padding: 0;
 }
 
 /* --- ECO & Name (xx-large Style) --- */
@@ -32,9 +44,27 @@ eco {
   border-radius: 6px;
 }
 
-img {
-  padding-top: 1rem;
+#chess-board {
+  width: 80%;
+  max-width: 400px;
+  margin-left: auto;
+  margin-right: auto;
+  margin-top: 1rem;
 }
+
+.highlight-white {
+  /* box-shadow: inset 0 0 3px 3px yellow; */
+  background-color:#aaa23b !important;
+}
+.highlight-black {
+  /* box-shadow: inset 0 0 3px 3px blue; */
+  background-color: rgb(102, 163, 163) !important;
+}
+
+/* 
+#chess-board * {
+  padding: 0;
+} */
 
 /* --- Chess Move Data (x-large Monospace Font) --- */
 pgn, uci, epd {

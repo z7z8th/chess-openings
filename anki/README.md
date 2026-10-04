@@ -1,0 +1,6 @@
+
+## Debug Anki UI
+
+```sh
+QTWEBENGINE_REMOTE_DEBUGGING=8080 anki
+```

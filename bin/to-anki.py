@@ -225,10 +225,11 @@ def convert_tsv_to_anki(input_file_path, output_file_path, skip_board_anim):
             front = f"{oidx}. {eco} - {name}"
             
             # Formulate card back. The <name> element now wraps a link to Lichess.
+            board_anim = f'<img src="{image_filename}" />' if not skip_board_anim else ''
             back = (
                 f"<eco>{eco}</eco>"
                 f'<name><a href="{lichess_url}" target="_blank">{name}</a></name>'
-                f'<div class="chess-board-container"><img src="{image_filename}" /></div>'
+                f'<div id="chess-board">{board_anim}</div>'
                 f'<a href="{chess_url}"><pgn>{pgn}</pgn></a>'
                 f"<uci>{uci}</uci>"
                 f"<epd>{epd}</epd>"
