@@ -11,6 +11,7 @@ import chess
 import chess.svg
 import cairosvg
 from apng import APNG
+import hashlib
 
 # --- GLOBAL CONFIGURATION VARIABLES ---
 BOARD_SIZE = 400  # Change this number to resize your chess boards (e.g., 400, 500, 600)
@@ -193,10 +194,12 @@ def convert_tsv_to_anki(input_file_path, output_file_path, skip_board_anim):
         # Configuration lines to lock in your custom note type, columns, and decks
         outfile.write("#notetype:Chess Opening\n")
         outfile.write("#html:true\n")
-        outfile.write("#tags column:3\n")
-        outfile.write("#deck column:4\n")
+        outfile.write("#tags column:4\n")
+        outfile.write("#deck column:5\n")
+        outfile.write("#guid column:6\n")
 
         for oidx, eco, name, pgn, uci, epd, image_filename in rows_data:
+            pgn = pgn.strip()
             # Clean the opening name to match Lichess's specific directory URL format
             # --- START UNIFIED REGEX LICHESS SLUG ALGORITHM ---
             # This single regex acts like a switchboard:
@@ -222,7 +225,7 @@ def convert_tsv_to_anki(input_file_path, output_file_path, skip_board_anim):
 
             chess_url = generate_chess_url(eco, name, pgn)
 
-            front = f"{oidx}. {eco} - {name}"
+            front = f"{eco} - {name}"
             
             # Formulate card back. The <name> element now wraps a link to Lichess.
             board_anim = f'<img src="{image_filename}" />' if not skip_board_anim else ''
@@ -236,9 +239,10 @@ def convert_tsv_to_anki(input_file_path, output_file_path, skip_board_anim):
             )
             tag = eco
             deck_name = f"Chess Openings::{eco}"
+            guid = hashlib.sha1(pgn.encode('utf-8')).hexdigest()
 
             # Save line using tab separator
-            outfile.write(f"{front}\t{back}\t{tag}\t{deck_name}\n")
+            outfile.write(f"{front}\t{back}\t{pgn}\t{tag}\t{deck_name}\t{guid}\n")
 
     print(f"\nSuccess! Processed {len(rows_data)} openings total.")
     if not skip_board_anim:
