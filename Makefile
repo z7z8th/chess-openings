@@ -19,5 +19,5 @@ clean:
 anki: all
 	$(PYTHON) bin/to-anki.py dist/all.tsv dist/chess-openings-anim-anki.txt
 
-anki-txt: all
+anki-js: all
 	$(PYTHON) bin/to-anki.py --skip-board-anim dist/all.tsv dist/chess-openings-anki.txt

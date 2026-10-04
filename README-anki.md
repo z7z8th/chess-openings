@@ -1,31 +1,24 @@
 # Anki
 
+## Anki with board animation generating by js dynamicly, txt only
 
-##  To anki
-
-* anki with board animation
-
-  ```sh
-  make anki
-  ```
-
-* anki without board, txt only
+* generate anki txt
 
   ```sh
-  make anki-txt
+  make anki-js
   ```
 
-* modify css to anki/chess-opening.css
+* modify Template
 
   `Tools -> Manage Note Types -> Add -> Select "Add: Basic" -> Name as "Chess Opening" -> Select "Chess Opening" -> Cards -> Modify Front, Back and Styling`
 
-  * Front
+* Front
 
   ```html
   <div class="card">{{Front}}</div>
   ```
 
-  * Back
+* Back
 
   ```html
   {{Back}}
@@ -60,11 +53,42 @@
   @import url("chessboard-1.0.0.css");
   @import url("chess-opening.css");
   ```
-* Add field `pgn` to `Chess Opening`
 
-* import to anki
+  * Add field `pgn` to `Chess Opening`
 
-* Debug Anki UI
+## Anki with apng board animation (Not recommended, size too large, 1.6GB)
+
+* generate anki txt
+
+  ```sh
+  make anki
+  ```
+
+* modify Template
+
+  `Tools -> Manage Note Types -> Add -> Select "Add: Basic" -> Name as "Chess Opening" -> Select "Chess Opening" -> Cards -> Modify Front, Back and Styling`
+
+* Front
+
+  ```html
+  <div class="card">{{Front}}</div>
+  ```
+
+* Back
+
+  ```html
+  {{Back}}
+  ```
+
+* Styling
+
+  ```css
+  @import url("chess-opening.css");
+  ```
+
+## Then Import to Anki
+
+## Debug Anki UI
 
   ```sh
   QTWEBENGINE_REMOTE_DEBUGGING=9222 anki
