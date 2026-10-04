@@ -36,6 +36,22 @@
   <script src="chessboard-1.0.0.js"></script>
 
   <script src="chess-opening.js"></script>
+
+  <div style="display: none;">
+    <img src="_bB.png">
+    <img src="_bK.png">
+    <img src="_bN.png">
+    <img src="_bP.png">
+    <img src="_bQ.png">
+    <img src="_bR.png">
+    <img src="_wB.png">
+    <img src="_wK.png">
+    <img src="_wN.png">
+    <img src="_wP.png">
+    <img src="_wQ.png">
+    <img src="_wR.png">
+  </div>
+
   ```
 
   * Styling
